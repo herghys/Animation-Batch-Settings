@@ -1,0 +1,12 @@
+{
+  "name": "herghys.AnimationBatchHelper",
+  "displayName": "Animation Clip Batch Helper",
+  "version": "1.0.0",
+  "unity": "2021.3",
+  "description": "A simple tool to batch process loop time animation clips in Unity including FBX import settings",
+  "author": {
+    "name": "Herghys",
+    "email": "helmi.santosa1@gmail.com",
+    "url": "https://github.com/herghys"
+  }
+}

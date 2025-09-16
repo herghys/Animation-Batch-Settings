@@ -14,8 +14,6 @@ namespace Herghys.AnimationBatchClipHelper.FBXImporter
     public class AnimationModelBatchSettings : EditorWindow
     {
         [SerializeField] private List<AnimationModelClipBatch> models = new();
-
-        private bool loopTime = true;
         private Vector2 scroll;
 
         private string PresetFileName;
@@ -39,8 +37,6 @@ namespace Herghys.AnimationBatchClipHelper.FBXImporter
             DrawPresetSection();
 
             EditorGUILayout.Space();
-
-            loopTime = EditorGUILayout.Toggle("Loop Time", loopTime);
 
             EditorGUILayout.Space();
             DrawDragDropArea();
@@ -70,17 +66,20 @@ namespace Herghys.AnimationBatchClipHelper.FBXImporter
                 // Show clips (now by name only)
                 for (int j = 0; j < model.Clips.Count; j++)
                 {
-                    var clip = model.Clips[j];
+                    AnimationClipEntry clip = model.Clips[j];
 
                     EditorGUILayout.BeginHorizontal();
 
-                    // Toggle for status
-                    clip.Status = EditorGUILayout.Toggle(clip.Status, GUILayout.Width(20));
+                    // Toggle for Processed status
+                    clip.Processed = EditorGUILayout.Toggle(clip.Processed, GUILayout.Width(20));
 
                     // Show clip name (read-only)
                     EditorGUI.BeginDisabledGroup(true);
-                    EditorGUILayout.TextField(clip.ClipName);
+                    EditorGUILayout.TextField(clip.ClipName, GUILayout.MinWidth(150));
                     EditorGUI.EndDisabledGroup();
+
+                    // Loop toggle (per clip)
+                    clip.Status = EditorGUILayout.ToggleLeft("Loop", clip.Status, GUILayout.Width(60));
 
                     EditorGUILayout.EndHorizontal();
                 }
@@ -104,7 +103,7 @@ namespace Herghys.AnimationBatchClipHelper.FBXImporter
             }
         }
 
-            void DrawDragDropArea()
+        void DrawDragDropArea()
         {
             Rect dropArea = GUILayoutUtility.GetRect(0, 50, GUILayout.ExpandWidth(true));
             GUI.Box(dropArea, "Drag FBX Models Here", EditorStyles.helpBox);
@@ -175,17 +174,17 @@ namespace Herghys.AnimationBatchClipHelper.FBXImporter
 
                 bool modified = false;
 
-                foreach (var clip in model.Clips)
+                foreach (var clipEntry in model.Clips)
                 {
-                    if (!clip.Status) continue;
+                    if (!clipEntry.Processed) continue;
 
                     for (int i = 0; i < clipAnimations.Length; i++)
                     {
-                        if (clipAnimations[i].name == clip.ClipName)
+                        if (clipAnimations[i].name == clipEntry.ClipName)
                         {
-                            clipAnimations[i].loopTime = loopTime;
+                            clipAnimations[i].loopTime = clipEntry.Status;
                             modified = true;
-                            Debug.Log($"Applied LoopTime={loopTime} to {clip.ClipName} in {model.ModelName}");
+                            Debug.Log($"Applied LoopTime={clipEntry.Status} to {clipEntry.ClipName} in {model.ModelName}");
                         }
                     }
                 }
@@ -247,65 +246,65 @@ namespace Herghys.AnimationBatchClipHelper.FBXImporter
         void LoadPreset()
         {
             if (string.IsNullOrEmpty(PresetFileName))
-        return;
+                return;
 
-    string filePath = PresetFilePath;
-    if (!File.Exists(filePath))
-    {
-        Debug.LogWarning($"Preset not found: {filePath}");
-        return;
-    }
-
-    string json = File.ReadAllText(filePath);
-    var wrapper = JsonUtility.FromJson<Wrapper>(json);
-
-    models = new List<AnimationModelClipBatch>();
-
-    if (wrapper.Models != null)
-    {
-        foreach (var savedModel in wrapper.Models)
-        {
-            string modelPath = AssetDatabase.GUIDToAssetPath(savedModel.ModelGUID);
-            if (string.IsNullOrEmpty(modelPath))
+            string filePath = PresetFilePath;
+            if (!File.Exists(filePath))
             {
-                Debug.LogWarning($"Model missing: {savedModel.ModelName} (GUID {savedModel.ModelGUID})");
-                models.Add(savedModel); // keep placeholder
-                continue;
+                Debug.LogWarning($"Preset not found: {filePath}");
+                return;
             }
 
-            var importer = AssetImporter.GetAtPath(modelPath) as ModelImporter;
-            if (importer == null)
+            string json = File.ReadAllText(filePath);
+            var wrapper = JsonUtility.FromJson<Wrapper>(json);
+
+            models = new List<AnimationModelClipBatch>();
+
+            if (wrapper.Models != null)
             {
-                Debug.LogWarning($"Not a valid ModelImporter: {savedModel.ModelName}");
-                continue;
-            }
-
-            var clipAnimations = importer.clipAnimations;
-            if (clipAnimations == null || clipAnimations.Length == 0)
-                clipAnimations = importer.defaultClipAnimations;
-
-            var restoredModel = new AnimationModelClipBatch(savedModel.ModelGUID, savedModel.ModelName);
-
-            foreach (var clip in clipAnimations)
-            {
-                // Try to find if it was in the preset
-                var savedClip = savedModel.Clips.Find(c => c.ClipName == clip.name);
-                if (savedClip != null)
+                foreach (var savedModel in wrapper.Models)
                 {
-                    restoredModel.Clips.Add(new AnimationClipEntry(clip.name, savedClip.Status));
-                }
-                else
-                {
-                    // New clip not in preset yet
-                    restoredModel.Clips.Add(new AnimationClipEntry(clip.name, true));
+                    string modelPath = AssetDatabase.GUIDToAssetPath(savedModel.ModelGUID);
+                    if (string.IsNullOrEmpty(modelPath))
+                    {
+                        Debug.LogWarning($"Model missing: {savedModel.ModelName} (GUID {savedModel.ModelGUID})");
+                        models.Add(savedModel); // keep placeholder
+                        continue;
+                    }
+
+                    var importer = AssetImporter.GetAtPath(modelPath) as ModelImporter;
+                    if (importer == null)
+                    {
+                        Debug.LogWarning($"Not a valid ModelImporter: {savedModel.ModelName}");
+                        continue;
+                    }
+
+                    var clipAnimations = importer.clipAnimations;
+                    if (clipAnimations == null || clipAnimations.Length == 0)
+                        clipAnimations = importer.defaultClipAnimations;
+
+                    var restoredModel = new AnimationModelClipBatch(savedModel.ModelGUID, savedModel.ModelName);
+
+                    foreach (var clip in clipAnimations)
+                    {
+                        // Try to find if it was in the preset
+                        var savedClip = savedModel.Clips.Find(c => c.ClipName == clip.name);
+                        if (savedClip != null)
+                        {
+                            restoredModel.Clips.Add(new AnimationClipEntry(clip.name, savedClip.Status, savedClip.Processed));
+                        }
+                        else
+                        {
+                            // New clip not in preset yet
+                            restoredModel.Clips.Add(new AnimationClipEntry(clip.name, true, true));
+                        }
+                    }
+
+                    models.Add(restoredModel);
                 }
             }
 
-            models.Add(restoredModel);
-        }
-    }
-
-    Debug.Log($"Preset loaded: {filePath}");
+            Debug.Log($"Preset loaded: {filePath}");
         }
 
 

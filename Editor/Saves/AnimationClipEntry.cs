@@ -3,20 +3,20 @@ using System.Collections.Generic;
 
 namespace Herghys.AnimationBatchClipHelper.Saves
 {
-
-
     [Serializable]
     public class AnimationClipEntry
     {
         public string ClipName;
         public bool Status;
+        public bool Processed;
 
         public AnimationClipEntry() { }
 
-        public AnimationClipEntry(string name, bool status = true)
+        public AnimationClipEntry(string name, bool status = true, bool processed = false)
         {
             ClipName = name;
             Status = status;
+            Processed = processed;
         }
     }
 

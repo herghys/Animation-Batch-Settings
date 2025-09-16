@@ -137,7 +137,7 @@ namespace Herghys.AnimationBatchClipHelper.AnimationClipBatch
 
             var saves = clips
                 .Where(c => c != null)
-                .Select(c => new AnimationClipEntry
+                .Select(c => new GUIDAnimationClipEntry
                 {
                     GUID = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(c)),
                     ClipName = c.name,
@@ -179,7 +179,7 @@ namespace Herghys.AnimationBatchClipHelper.AnimationClipBatch
         [System.Serializable]
         public class Wrapper
         {
-            public List<AnimationClipEntry> Clips;
+            public List<GUIDAnimationClipEntry> Clips;
         }
     }
 }

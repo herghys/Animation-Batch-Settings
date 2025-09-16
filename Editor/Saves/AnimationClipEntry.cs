@@ -3,20 +3,32 @@ using System.Collections.Generic;
 
 namespace Herghys.AnimationBatchClipHelper.Saves
 {
+
+
     [Serializable]
     public class AnimationClipEntry
     {
-        public string GUID;
         public string ClipName;
         public bool Status;
 
         public AnimationClipEntry() { }
 
-        public AnimationClipEntry(string guid, string name, bool status = true)
+        public AnimationClipEntry(string name, bool status = true)
         {
-            GUID = guid;
             ClipName = name;
             Status = status;
+        }
+    }
+
+    [Serializable]
+    public class GUIDAnimationClipEntry : AnimationClipEntry
+    {
+        public string GUID;
+        public GUIDAnimationClipEntry() { }
+
+        public GUIDAnimationClipEntry(string guid, string name, bool status = true) : base(name, status)
+        {
+            GUID = guid;
         }
     }
 

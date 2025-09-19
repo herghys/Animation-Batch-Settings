@@ -15,7 +15,7 @@ namespace Herghys.AnimationBatchClipHelper.AnimationClipBatch
     {
         [SerializeField] private List<AnimationClip> clips = new();
         [SerializeField] private bool loopTime = true;
-        [SerializeField] private bool autoClearList = true;
+        [SerializeField] private bool autoClearList = false;
 
         private string PresetFileName;
         private string PresetFilePath => Path.Combine(GlobalSavesData.AnimationClipBatchLocation, PresetFileName);
@@ -26,7 +26,7 @@ namespace Herghys.AnimationBatchClipHelper.AnimationClipBatch
         [MenuItem("Tools/Herghys/Animation Clip Batch Settings")]
         public static void ShowWindow()
         {
-            GetWindow<AnimationClipBatchSettings>("Animation Clip Settings");
+            GetWindow<AnimationClipBatchSettings>("Animation Clip Batch Settings");
         }
 
         private void OnEnable()
@@ -42,10 +42,12 @@ namespace Herghys.AnimationBatchClipHelper.AnimationClipBatch
             EditorGUILayout.LabelField("Batch Animation Clip Settings", EditorStyles.boldLabel);
 
             DrawPresetSection();
+            DrawClipList();
+            DrawClipSettings();
+        }
 
-            EditorGUILayout.PropertyField(clipsProperty, true);
-            serializedObject.ApplyModifiedProperties();
-
+        private void DrawClipSettings()
+        {
             loopTime = EditorGUILayout.Toggle("Loop Time", loopTime);
             autoClearList = EditorGUILayout.Toggle("Auto Clear List", autoClearList);
 
@@ -58,8 +60,17 @@ namespace Herghys.AnimationBatchClipHelper.AnimationClipBatch
 
             if (GUILayout.Button("Clear List"))
             {
-                clips.Clear();
+                ClearList();
             }
+        }
+
+        /// <summary>
+        /// Draw Clip List
+        /// </summary>
+        private void DrawClipList()
+        {
+            EditorGUILayout.PropertyField(clipsProperty, true);
+            serializedObject.ApplyModifiedProperties();
         }
 
         void DrawPresetSection()
@@ -79,7 +90,7 @@ namespace Herghys.AnimationBatchClipHelper.AnimationClipBatch
 
                 if (!string.IsNullOrEmpty(selected))
                 {
-                    PresetFileName = Path.GetFileName(selected); // only store filename
+                    PresetFileName = Path.GetFileName(selected);
                 }
             }
 
@@ -126,8 +137,17 @@ namespace Herghys.AnimationBatchClipHelper.AnimationClipBatch
 
             if (autoClearList)
             {
-                clips.Clear();
+                ClearList();
             }
+
+            AssetDatabase.Refresh();
+        }
+
+        private void ClearList()
+        {
+            clips.Clear();
+            clipsProperty.arraySize = 0;
+            serializedObject.ApplyModifiedProperties();
         }
 
         void SavePreset()

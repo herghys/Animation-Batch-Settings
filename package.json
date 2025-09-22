@@ -1,14 +1,18 @@
 {
-  "name": "com.herghys.animationbatchhelper",
-  "displayName": "Animation Clip Batch Helper",
-  "version": "1.0.3",
-  "unity": "2021.3",
-  "description": "A simple tool to batch process loop time animation clips in Unity including FBX import settings",
-  "author": {
-    "name": "Herghys",
-    "email": "helmi.santosa1@gmail.com",
-    "url": "https://github.com/herghys"
-  },
-  "license": "MIT",
-   "category": "Animation"
+    "name": "com.herghys.animationbatchhelper",
+    "displayName": "Animation Clip Batch Helper",
+    "version": "1.0.4",
+    "unity": "2021.3",
+    "description": "A simple tool to batch process loop time animation clips in Unity including FBX import settings",
+    "author": {
+        "name": "Herghys",
+        "email": "helmi.santosa1@gmail.com",
+        "url": "https://github.com/herghys"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/herghys/Animation-Batch-Settings.git"
+    },
+    "license": "MIT",
+    "category": "Animation"
 }

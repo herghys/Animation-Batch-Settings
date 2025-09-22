@@ -46,5 +46,17 @@ namespace Herghys.AnimationBatchClipHelper.Saves
             ModelGUID = guid;
             ModelName = name;
         }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is AnimationModelClipBatch other)
+                return ModelGUID == other.ModelGUID;
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return ModelGUID?.GetHashCode() ?? 0;
+        }
     }
 }

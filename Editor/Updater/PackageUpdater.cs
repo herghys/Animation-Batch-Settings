@@ -81,7 +81,7 @@ namespace Herghys.AnimationBatchClipHelper.Updater
             if (string.IsNullOrEmpty(packageData.repositoryUrl))
             {
                 if (!silent)
-                    EditorUtility.DisplayDialog("Update Check", "PackageRepository URL not found in package.json", "OK");
+                    EditorUtility.DisplayDialog("Update Check", "Repository URL not found in package.json", "OK");
                 return;
             }
 
@@ -111,9 +111,10 @@ namespace Herghys.AnimationBatchClipHelper.Updater
                     "Update Available",
                     $"A new version of {packageData.displayName} is available!\n\n" +
                     $"Current: {packageData.version}\nLatest: {latestVersion}\n\n" +
-                    "Do you want to open the GitHub releases page?",
+                    "Do you want to update package.json and open the GitHub releases page?",
                     "Update Now", "Later"))
                 {
+                    UpdateLocalPackageVersion(latestVersion);
                     Application.OpenURL($"https://github.com/{owner}/{repo}/releases");
                 }
             }
@@ -121,6 +122,31 @@ namespace Herghys.AnimationBatchClipHelper.Updater
             {
                 EditorUtility.DisplayDialog("Update Check", $"{packageData.displayName} is up to date (v{packageData.version}).", "OK");
             }
+        }
+
+        /// <summary>
+        /// Update Unity Package Manager
+        /// </summary>
+        /// <param name="newVersion"></param>
+        private static void UpdateLocalPackageVersion(string newVersion)
+        {
+            string path = Path.Combine("Packages", "com.herghys.animationbatchhelper", "package.json");
+            if (!File.Exists(path))
+            {
+                Debug.LogWarning("package.json not found, cannot update version.");
+                return;
+            }
+
+            string json = File.ReadAllText(path);
+            var packageDataObj = JsonUtility.FromJson<PackageJsonData>(json);
+
+            packageDataObj.version = newVersion;
+
+            string newJson = JsonUtility.ToJson(packageDataObj, true);
+            File.WriteAllText(path, newJson);
+
+            Debug.Log($"Updated {packageDataObj.displayName} version to {newVersion} in package.json");
+            AssetDatabase.Refresh();
         }
 
         /// <summary>

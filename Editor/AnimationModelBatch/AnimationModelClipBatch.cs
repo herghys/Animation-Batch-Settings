@@ -272,7 +272,7 @@ namespace Herghys.AnimationBatchClipHelper.FBXImporter
                 ApplyAnimationSettings(model, modelPath);
             }
 
-            if (GUILayout.Button("Remove Model", GUILayout.Height(30)))
+            if (GUILayout.Button("Remove Model", GUILayout.Height(40)))
             {
                 models.Remove(model);
                 modelFoldouts.Remove(model.ModelGUID);

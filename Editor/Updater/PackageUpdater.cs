@@ -13,6 +13,8 @@ namespace Herghys.AnimationBatchClipHelper.Updater
     public static class PackageUpdater
     {
         private static PackageJsonData packageData;
+        private static string upmPackagePath = Path.Combine("Packages", "com.herghys.animationbatchhelper", "package.json");
+        private static string manifestPath = Path.Combine("Packages", "manifest.json");
 
         static PackageUpdater()
         {
@@ -33,22 +35,21 @@ namespace Herghys.AnimationBatchClipHelper.Updater
         }
 
         /// <summary>
-        /// Load Package JSON
+        /// Load Package JSON (UPM first, fallback to Assets)
         /// </summary>
         private static void LoadPackageJson()
         {
             packageData = null;
 
-            // 1. Try UPM path first
-            string upmPath = Path.Combine("Packages", "com.herghys.animationbatchhelper", "package.json");
-            if (File.Exists(upmPath))
+            // 1. UPM path
+            if (File.Exists(upmPackagePath))
             {
-                string json = File.ReadAllText(upmPath);
+                string json = File.ReadAllText(upmPackagePath);
                 packageData = JsonUtility.FromJson<PackageJsonData>(json);
                 return;
             }
 
-            // 2. Fallback: Search in Assets
+            // 2. Assets path
             string[] guids = AssetDatabase.FindAssets("package t:TextAsset", new[] { "Assets" });
             foreach (string guid in guids)
             {
@@ -64,18 +65,13 @@ namespace Herghys.AnimationBatchClipHelper.Updater
                 }
             }
 
-            if (packageData == null)
-            {
-                Debug.LogWarning("[PackageUpdater] package.json not found in Packages/ or Assets/");
-                packageData = new PackageJsonData(); // empty fallback
-            }
+            Debug.LogWarning("[PackageUpdater] package.json not found in Packages/ or Assets/");
+            packageData = new PackageJsonData(); // fallback
         }
 
         /// <summary>
         /// Check for updates
         /// </summary>
-        /// <param name="silent"></param>
-        /// <returns></returns>
         private static async Task CheckForUpdates(bool silent)
         {
             if (string.IsNullOrEmpty(packageData.repositoryUrl))
@@ -85,7 +81,7 @@ namespace Herghys.AnimationBatchClipHelper.Updater
                 return;
             }
 
-            // Extract repo owner + name from GitHub URL
+            // Extract owner + repo
             var match = Regex.Match(packageData.repositoryUrl, @"github\.com/([^/]+)/([^/.]+)");
             if (!match.Success)
             {
@@ -111,11 +107,17 @@ namespace Herghys.AnimationBatchClipHelper.Updater
                     "Update Available",
                     $"A new version of {packageData.displayName} is available!\n\n" +
                     $"Current: {packageData.version}\nLatest: {latestVersion}\n\n" +
-                    "Do you want to update package.json and open the GitHub releases page?",
+                    "Do you want to update?",
                     "Update Now", "Later"))
                 {
-                    UpdateLocalPackageVersion(latestVersion);
-                    Application.OpenURL($"https://github.com/{owner}/{repo}/releases");
+                    if (File.Exists(upmPackagePath))
+                    {
+                        UpdateManifestVersion(latestVersion);
+                    }
+                    else
+                    {
+                        Application.OpenURL(packageData.repositoryUrl);
+                    }
                 }
             }
             else if (!silent)
@@ -125,36 +127,38 @@ namespace Herghys.AnimationBatchClipHelper.Updater
         }
 
         /// <summary>
-        /// Update Unity Package Manager
+        /// Update manifest.json dependency version
         /// </summary>
-        /// <param name="newVersion"></param>
-        private static void UpdateLocalPackageVersion(string newVersion)
+        private static void UpdateManifestVersion(string newVersion)
         {
-            string path = Path.Combine("Packages", "com.herghys.animationbatchhelper", "package.json");
-            if (!File.Exists(path))
+            if (!File.Exists(manifestPath))
             {
-                Debug.LogWarning("package.json not found, cannot update version.");
+                Debug.LogWarning("manifest.json not found, cannot update.");
                 return;
             }
 
-            string json = File.ReadAllText(path);
-            var packageDataObj = JsonUtility.FromJson<PackageJsonData>(json);
+            string manifestText = File.ReadAllText(manifestPath);
 
-            packageDataObj.version = newVersion;
+            // Regex replace the dependency version
+            string pattern = "\"com.herghys.animationbatchhelper\"\\s*:\\s*\"[^\"]+\"";
+            string replacement = $"\"com.herghys.animationbatchhelper\": \"{newVersion}\"";
 
-            string newJson = JsonUtility.ToJson(packageDataObj, true);
-            File.WriteAllText(path, newJson);
-
-            Debug.Log($"Updated {packageDataObj.displayName} version to {newVersion} in package.json");
-            AssetDatabase.Refresh();
+            if (Regex.IsMatch(manifestText, pattern))
+            {
+                manifestText = Regex.Replace(manifestText, pattern, replacement);
+                File.WriteAllText(manifestPath, manifestText);
+                Debug.Log($"[PackageUpdater] Updated manifest.json to version {newVersion}");
+                AssetDatabase.Refresh();
+            }
+            else
+            {
+                Debug.LogWarning("[PackageUpdater] Could not find com.herghys.animationbatchhelper in manifest.json");
+            }
         }
 
         /// <summary>
-        /// Get Latest Release
+        /// Get latest GitHub release tag
         /// </summary>
-        /// <param name="owner"></param>
-        /// <param name="repo"></param>
-        /// <returns></returns>
         private static async Task<string> GetLatestReleaseTag(string owner, string repo)
         {
             try
@@ -178,11 +182,8 @@ namespace Herghys.AnimationBatchClipHelper.Updater
         }
 
         /// <summary>
-        /// Newwer Version Check
+        /// Compare versions
         /// </summary>
-        /// <param name="latest"></param>
-        /// <param name="current"></param>
-        /// <returns></returns>
         private static bool IsNewerVersion(string latest, string current)
         {
             if (System.Version.TryParse(latest, out var latestVer) &&

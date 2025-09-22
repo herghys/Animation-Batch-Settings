@@ -139,21 +139,40 @@ namespace Herghys.AnimationBatchClipHelper.Updater
 
             string manifestText = File.ReadAllText(manifestPath);
 
-            // Regex replace the dependency version
-            string pattern = "\"com.herghys.animationbatchhelper\"\\s*:\\s*\"[^\"]+\"";
-            string replacement = $"\"com.herghys.animationbatchhelper\": \"{newVersion}\"";
-
-            if (Regex.IsMatch(manifestText, pattern))
+            // Match the dependency (with or without #tag)
+            string pattern = "\"com.herghys.animationbatchhelper\"\\s*:\\s*\"([^\"]+)\"";
+            var match = Regex.Match(manifestText, pattern);
+            if (!match.Success)
             {
-                manifestText = Regex.Replace(manifestText, pattern, replacement);
-                File.WriteAllText(manifestPath, manifestText);
-                Debug.Log($"[PackageUpdater] Updated manifest.json to version {newVersion}");
-                AssetDatabase.Refresh();
+                Debug.LogWarning("[PackageUpdater] Could not find com.herghys.animationbatchhelper in manifest.json");
+                return;
+            }
+
+            string currentValue = match.Groups[1].Value;
+            string newValue;
+
+            if (currentValue.Contains("#"))
+            {
+                // Replace existing tag
+                newValue = Regex.Replace(currentValue, "#.*$", $"#{newVersion}");
+            }
+            else if (currentValue.EndsWith(".git"))
+            {
+                // Append tag
+                newValue = $"{currentValue}#{newVersion}";
             }
             else
             {
-                Debug.LogWarning("[PackageUpdater] Could not find com.herghys.animationbatchhelper in manifest.json");
+                // Fallback (version only)
+                newValue = newVersion;
             }
+
+            string replacement = $"\"com.herghys.animationbatchhelper\": \"{newValue}\"";
+            manifestText = Regex.Replace(manifestText, pattern, replacement);
+
+            File.WriteAllText(manifestPath, manifestText);
+            Debug.Log($"[PackageUpdater] Updated manifest.json to {newValue}");
+            AssetDatabase.Refresh();
         }
 
         /// <summary>

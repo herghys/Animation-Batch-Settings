@@ -22,7 +22,7 @@ namespace Herghys.AnimationBatchClipHelper.FBXImporter
         private string PresetFileName;
         private string PresetFilePath => Path.Combine(GlobalSavesData.AnimationModelClipBatchLocation, PresetFileName);
 
-        [MenuItem("Tools/Herghys/Animation Model Batch Settings")]
+        [MenuItem("Tools/Herghys/Animation Batch Helper/Animation Model Batch Settings")]
         public static void ShowWindow()
         {
             GetWindow<AnimationModelBatchSettings>("Model Clip Settings");

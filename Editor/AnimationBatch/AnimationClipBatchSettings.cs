@@ -23,7 +23,7 @@ namespace Herghys.AnimationBatchClipHelper.AnimationClipBatch
         SerializedObject serializedObject;
         SerializedProperty clipsProperty;
 
-        [MenuItem("Tools/Herghys/Animation Clip Batch Settings")]
+        [MenuItem("Tools/Herghys/Animation Batch Helper/Animation Clip Batch Settings")]
         public static void ShowWindow()
         {
             GetWindow<AnimationClipBatchSettings>("Animation Clip Batch Settings");

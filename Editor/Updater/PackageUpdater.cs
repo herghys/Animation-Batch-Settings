@@ -28,7 +28,7 @@ namespace Herghys.AnimationBatchClipHelper.Updater
             _ = CheckForUpdates(true);
         }
 
-        [MenuItem("Tools/Herghys/Check for Update", false, 1001)]
+        [MenuItem("Tools/Herghys/Animation Batch Helper/Check for Update", false, 1001)]
         private static void ManualCheck()
         {
             _ = CheckForUpdates(false);
